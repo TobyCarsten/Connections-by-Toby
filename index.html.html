@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connections — Custom Puzzle</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf7f2;
+    --ink: #1a1410;
+    --muted: #7a6f63;
+    --border: #d8d0c4;
+    --card: #fff;
+    --c0: #f0c05a; /* yellow */
+    --c1: #7bc47f; /* green */
+    --c2: #6aacde; /* blue */
+    --c3: #c97bb2; /* purple */
+    --c0d: #8a6a1a;
+    --c1d: #1e5c22;
+    --c2d: #1a4f7a;
+    --c3d: #6b2460;
+    --radius: 8px;
+    --shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 100%;
+    padding: 18px 24px;
+    border-bottom: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--card);
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    letter-spacing: -.5px;
+  }
+  header .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    font-weight: 500;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  /* ───── TABS ───── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1.5px solid var(--border);
+    width: 100%;
+    max-width: 640px;
+    margin-top: 28px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 11px 0;
+    border: none;
+    background: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    transition: all .2s;
+    letter-spacing: .02em;
+  }
+  .tab-btn.active {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .view { display: none; width: 100%; max-width: 640px; padding: 24px 16px 48px; }
+  .view.active { display: block; }
+
+  /* ───── CREATOR ───── */
+  .creator-section {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .color-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .section-header label {
+    font-weight: 600;
+    font-size: .875rem;
+    letter-spacing: .02em;
+  }
+  .difficulty-label {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+  }
+  input[type=text] {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9rem;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    transition: border-color .2s;
+  }
+  input[type=text]:focus { border-color: var(--ink); }
+  input[type=text]::placeholder { color: var(--muted); }
+  .words-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .words-grid input { margin: 0; }
+  .creator-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+  .title-input {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    width: 100%;
+    background: var(--bg);
+    outline: none;
+    margin-bottom: 20px;
+    transition: border-color .2s;
+  }
+  .title-input:focus { border-color: var(--ink); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: var(--radius);
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn-primary:hover { opacity: .85; transform: translateY(-1px); }
+  .btn-secondary {
+    background: none;
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+  }
+  .btn-secondary:hover { border-color: var(--ink); }
+
+  .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+  .share-box {
+    margin-top: 20px;
+    background: #f0ede8;
+    border-radius: var(--radius);
+    padding: 14px;
+    display: none;
+  }
+  .share-box.visible { display: block; }
+  .share-box p {
+    font-size: .8rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .02em;
+  }
+  .share-url {
+    font-family: 'DM Mono', monospace;
+    font-size: .75rem;
+    word-break: break-all;
+    color: var(--ink);
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+
+  /* ───── GAME ───── */
+  .game-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 6px;
+    letter-spacing: -.5px;
+  }
+  .game-subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: .82rem;
+    margin-bottom: 22px;
+  }
+  .mistakes-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: .8rem;
+    color: var(--muted);
+  }
+  .mistake-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--ink);
+    display: inline-block;
+    transition: all .3s;
+  }
+  .mistake-dot.used { background: var(--border); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+    margin-bottom: 16px;
+  }
+  .tile {
+    aspect-ratio: 1 / .8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: .78rem;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    user-select: none;
+    transition: all .15s;
+    line-height: 1.2;
+  }
+  .tile:hover { border-color: var(--ink); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,.1); }
+  .tile.selected {
+    background: #e8e3dc;
+    border-color: var(--ink);
+  }
+  .tile.solved { cursor: default; border: none; }
+  .tile.shake { animation: shake .4s; }
+  .tile.pop { animation: pop .3s; }
+
+  .solved-row {
+    grid-column: 1 / -1;
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 54px;
+    animation: revealRow .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .solved-row .cat-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -.3px;
+  }
+  .solved-row .cat-words {
+    font-size: .72rem;
+    margin-top: 3px;
+    opacity: .75;
+    font-weight: 500;
+    letter-spacing: .03em;
+  }
+
+  .game-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .game-btns .btn { padding: 9px 18px; font-size: .82rem; }
+
+  .result-banner {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    margin-top: 20px;
+    animation: revealRow .5s cubic-bezier(.34,1.56,.64,1);
+  }
+  .result-banner.visible { display: block; }
+  .result-banner h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+  }
+  .result-banner p { color: var(--muted); font-size: .85rem; margin-bottom: 14px; }
+  .result-emoji { font-size: 2.2rem; margin-bottom: 10px; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  @keyframes revealRow {
+    0% { opacity: 0; transform: scale(.95) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: .85rem;
+    font-weight: 500;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .no-puzzle {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .no-puzzle h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--ink); margin-bottom: 8px; }
+  .no-puzzle p { font-size: .9rem; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Connections</h1>
+  <span class="badge" id="mode-badge">Create</span>
+</header>
+
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" onclick="switchTab('create')">✏️ Create</button>
+  <button class="tab-btn" onclick="switchTab('play')">🎮 Play</button>
+</div>
+
+<!-- CREATE VIEW -->
+<div class="view active" id="view-create">
+  <p class="creator-title">Build your puzzle</p>
+  <input class="title-input" type="text" id="puzzle-title" placeholder="Puzzle title (e.g. 'Sunday Brunch Puzzle')" />
+
+  <div id="categories-container"></div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="generateLink()">🔗 Generate share link</button>
+    <button class="btn btn-secondary" onclick="previewPlay()">▶ Preview</button>
+  </div>
+
+  <div class="share-box" id="share-box">
+    <p>SHARE THIS LINK WITH FRIENDS</p>
+    <div class="share-url" id="share-url"></div>
+    <button class="btn btn-primary" onclick="copyLink()" style="width:100%">📋 Copy link</button>
+  </div>
+</div>
+
+<!-- PLAY VIEW -->
+<div class="view" id="view-play">
+  <div id="game-container"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATEGORIES = [
+  { key: 'c0', color: '#f0c05a', dark: '#7a5a10', label: 'Easiest' },
+  { key: 'c1', color: '#7bc47f', dark: '#1e5c22', label: 'Easy' },
+  { key: 'c2', color: '#6aacde', dark: '#1a4f7a', label: 'Medium' },
+  { key: 'c3', color: '#c97bb2', dark: '#6b2460', label: 'Hardest' },
+];
+
+// ─── BUILD CREATOR ───
+function buildCreator() {
+  const container = document.getElementById('categories-container');
+  container.innerHTML = '';
+  CATEGORIES.forEach((cat, i) => {
+    const sec = document.createElement('div');
+    sec.className = 'creator-section';
+    sec.innerHTML = `
+      <div class="section-header">
+        <div class="color-dot" style="background:${cat.color}"></div>
+        <label>Category ${i+1}</label>
+        <span class="difficulty-label">${cat.label}</span>
+      </div>
+      <input type="text" id="cat-name-${i}" placeholder="Category name (e.g. Types of cheese)" />
+      <div class="words-grid">
+        <input type="text" id="word-${i}-0" placeholder="Word 1" />
+        <input type="text" id="word-${i}-1" placeholder="Word 2" />
+        <input type="text" id="word-${i}-2" placeholder="Word 3" />
+        <input type="text" id="word-${i}-3" placeholder="Word 4" />
+      </div>
+    `;
+    container.appendChild(sec);
+  });
+}
+
+function collectPuzzle() {
+  const title = document.getElementById('puzzle-title').value.trim() || 'Custom Connections';
+  const categories = [];
+  for (let i = 0; i < 4; i++) {
+    const name = document.getElementById(`cat-name-${i}`).value.trim();
+    const words = [0,1,2,3].map(j => document.getElementById(`word-${i}-${j}`).value.trim().toUpperCase()).filter(Boolean);
+    if (name && words.length === 4) categories.push({ name, words, colorIdx: i });
+  }
+  return { title, categories };
+}
+
+function validatePuzzle(puzzle) {
+  if (puzzle.categories.length < 4) return 'Please fill in all 4 categories with a name and exactly 4 words each.';
+  const allWords = puzzle.categories.flatMap(c => c.words);
+  const unique = new Set(allWords);
+  if (unique.size !== 16) return 'All 16 words must be unique!';
+  return null;
+}
+
+function generateLink() {
+  const puzzle = collectPuzzle();
+  const err = validatePuzzle(puzzle);
+  if (err) { showToast(err, 3500); return; }
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(puzzle))));
+  const url = `${location.origin}${location.pathname}?p=${encoded}`;
+  document.getElementById('share-url').textContent = url;
+  document.getElementById('share-box').classList.add('visible');
+}
+
+function copyLink() {
+  const url = document.getElementById('share-url').textContent;
+  navigator.clipboard.writeText(url).then(() => showToast('Link copied! 🎉'));
+}
+
+function previewPlay() {
+  const puzzle = collectPuzzle();
+  const err = validatePuzzle(puzzle);
+  if (err) { showToast(err, 3500); return; }
+  startGame(puzzle);
+  switchTab('play');
+}
+
+// ─── GAME ───
+let gameState = null;
+
+function startGame(puzzle) {
+  const container = document.getElementById('game-container');
+
+  // Shuffle all words
+  let tiles = puzzle.categories.flatMap((cat, ci) =>
+    cat.words.map(w => ({ word: w, catIdx: ci }))
+  );
+  tiles = shuffle(tiles);
+
+  gameState = {
+    puzzle,
+    tiles,
+    selected: [],
+    solved: [], // catIdx array
+    mistakes: 0,
+    maxMistakes: 4,
+    done: false,
+  };
+
+  renderGame();
+}
+
+function renderGame() {
+  const { puzzle, tiles, selected, solved, mistakes, maxMistakes, done } = gameState;
+  const container = document.getElementById('game-container');
+
+  const dotsHTML = Array.from({length: maxMistakes}, (_, i) =>
+    `<span class="mistake-dot ${i < mistakes ? 'used' : ''}"></span>`
+  ).join('');
+
+  const solvedRows = solved.map(ci => {
+    const cat = puzzle.categories[ci];
+    const col = CATEGORIES[ci];
+    return `
+      <div class="solved-row" style="background:${col.color}; color:${col.dark}">
+        <div class="cat-name">${cat.name}</div>
+        <div class="cat-words">${cat.words.join(' · ')}</div>
+      </div>
+    `;
+  }).join('');
+
+  const remainingTiles = tiles.filter(t => !solved.includes(t.catIdx));
+  const gridHTML = remainingTiles.map((t, idx) => {
+    const isSel = selected.includes(idx);
+    return `<div class="tile ${isSel ? 'selected' : ''}" data-idx="${idx}" onclick="toggleTile(${idx})">${t.word}</div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <h2 class="game-title">${puzzle.title}</h2>
+    <p class="game-subtitle">Group the 16 words into 4 categories</p>
+    <div class="mistakes-row">Mistakes remaining: ${dotsHTML}</div>
+    <div class="grid" id="tile-grid">
+      ${solvedRows}
+      ${gridHTML}
+    </div>
+    <div class="game-btns">
+      <button class="btn btn-secondary" onclick="shuffleTiles()">🔀 Shuffle</button>
+      <button class="btn btn-secondary" onclick="deselectAll()">✕ Deselect all</button>
+      <button class="btn btn-primary" onclick="submitGuess()">Submit</button>
+    </div>
+    <div class="result-banner ${done ? 'visible' : ''}" id="result-banner">
+      <div class="result-emoji">${gameState.mistakes < 4 ? (gameState.mistakes === 0 ? '🏆' : '🎉') : '😅'}</div>
+      <h2>${gameState.mistakes === 0 ? 'Perfect!' : gameState.mistakes < 4 ? 'Well done!' : 'Better luck next time!'}</h2>
+      <p>${gameState.mistakes === 0 ? 'No mistakes — flawless!' : `Finished with ${gameState.mistakes} mistake${gameState.mistakes !== 1 ? 's' : ''}.`}</p>
+      <button class="btn btn-secondary" onclick="switchTab('create')">✏️ Make your own</button>
+    </div>
+  `;
+}
+
+function toggleTile(idx) {
+  if (gameState.done) return;
+  const remaining = gameState.tiles.filter(t => !gameState.solved.includes(t.catIdx));
+  if (gameState.selected.includes(idx)) {
+    gameState.selected = gameState.selected.filter(i => i !== idx);
+  } else {
+    if (gameState.selected.length >= 4) return;
+    gameState.selected.push(idx);
+  }
+  renderGame();
+}
+
+function deselectAll() { gameState.selected = []; renderGame(); }
+
+function shuffleTiles() {
+  const remaining = gameState.tiles.filter(t => !gameState.solved.includes(t.catIdx));
+  const shuffled = shuffle(remaining);
+  gameState.tiles = [...gameState.tiles.filter(t => gameState.solved.includes(t.catIdx)), ...shuffled];
+  gameState.selected = [];
+  renderGame();
+}
+
+function submitGuess() {
+  if (gameState.selected.length !== 4) { showToast('Select exactly 4 words'); return; }
+  const remaining = gameState.tiles.filter(t => !gameState.solved.includes(t.catIdx));
+  const selectedTiles = gameState.selected.map(i => remaining[i]);
+  const catIdxs = selectedTiles.map(t => t.catIdx);
+  const allSame = catIdxs.every(c => c === catIdxs[0]);
+
+  if (allSame) {
+    const catIdx = catIdxs[0];
+    gameState.solved.push(catIdx);
+    gameState.selected = [];
+    const remaining2 = gameState.tiles.filter(t => !gameState.solved.includes(t.catIdx));
+    if (remaining2.length === 0) {
+      gameState.done = true;
+    }
+    renderGame();
+    showToast(gameState.done ? '🎉 Puzzle complete!' : '✅ Correct!');
+  } else {
+    // check if one away
+    const counts = {};
+    catIdxs.forEach(c => counts[c] = (counts[c]||0)+1);
+    const maxCount = Math.max(...Object.values(counts));
+    
+    gameState.mistakes++;
+    gameState.selected = [];
+
+    // shake tiles
+    renderGame();
+    document.querySelectorAll('.tile').forEach(t => {
+      const idx = parseInt(t.dataset.idx);
+      // animate tiles that were selected
+      t.classList.add('shake');
+    });
+
+    if (gameState.mistakes >= gameState.maxMistakes) {
+      gameState.done = true;
+      renderGame();
+      showToast('😅 Out of guesses!', 2000);
+    } else {
+      showToast(maxCount === 3 ? 'One away! 🔥' : 'Not quite — try again');
+    }
+  }
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ─── TABS ───
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && tab==='create') || (i===1 && tab==='play'));
+  });
+  document.getElementById('view-create').classList.toggle('active', tab==='create');
+  document.getElementById('view-play').classList.toggle('active', tab==='play');
+  document.getElementById('mode-badge').textContent = tab === 'create' ? 'Create' : 'Play';
+}
+
+// ─── TOAST ───
+let toastTimer;
+function showToast(msg, duration=2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ─── INIT ───
+function init() {
+  buildCreator();
+
+  const params = new URLSearchParams(location.search);
+  const p = params.get('p');
+  if (p) {
+    try {
+      const puzzle = JSON.parse(decodeURIComponent(escape(atob(p))));
+      startGame(puzzle);
+      switchTab('play');
+      // Hide tabs' create option for share links (optional — keep for re-creation)
+    } catch(e) {
+      document.getElementById('game-container').innerHTML = `
+        <div class="no-puzzle">
+          <h2>Invalid puzzle link</h2>
+          <p>This link seems to be broken. Ask your friend for a new one, or create your own!</p>
+        </div>`;
+      switchTab('play');
+    }
+  } else {
+    document.getElementById('game-container').innerHTML = `
+      <div class="no-puzzle">
+        <h2>No puzzle loaded yet</h2>
+        <p>Head to the <strong>Create</strong> tab to build your puzzle, then hit <em>Preview</em> to play it here — or generate a share link for your friends.</p>
+      </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
